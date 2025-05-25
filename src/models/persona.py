@@ -2,7 +2,7 @@
 Database models for personas
 """
 import uuid
-from src.main import db
+from src.extensions import db
 
 class Persona(db.Model):
     """Persona model for storing advisor personalities"""

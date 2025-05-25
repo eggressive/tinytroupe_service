@@ -3,7 +3,7 @@ Database models for conversations
 """
 from datetime import datetime
 import uuid
-from src.main import db
+from src.extensions import db
 
 class Conversation(db.Model):
     """Conversation model for storing chat sessions"""

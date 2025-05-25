@@ -6,20 +6,20 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))  # Required for Flask deployment
 
 from flask import Flask, render_template, request, jsonify, session
-from flask_sqlalchemy import SQLAlchemy
-from flask_cors import CORS
+from src.extensions import db, cors
+from src.config import Config
 
 # Initialize Flask app
 app = Flask(__name__)
-CORS(app)
 
-# Configure database
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URI', 'sqlite:///tinytroupe.db')
+# Configure database and other settings
+app.config['SQLALCHEMY_DATABASE_URI'] = Config.DATABASE_URI
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev_secret_key')
+app.config['SECRET_KEY'] = Config.SECRET_KEY
 
-# Initialize database
-db = SQLAlchemy(app)
+# Initialize extensions with the app
+db.init_app(app)
+cors.init_app(app)
 
 # Import routes after app initialization to avoid circular imports
 from src.routes.conversation import conversation_bp

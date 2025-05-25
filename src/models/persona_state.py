@@ -3,7 +3,7 @@ Database models for persona states
 """
 import uuid
 from datetime import datetime
-from src.main import db
+from src.extensions import db
 
 class PersonaState(db.Model):
     """PersonaState model for storing persona memory states in conversations"""

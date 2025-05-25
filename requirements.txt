@@ -1,3 +1,4 @@
+# TinyTroupe Service Requirements
 # Flask and extensions
 flask==2.3.3
 flask-sqlalchemy==3.1.1

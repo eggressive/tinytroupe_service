@@ -3,7 +3,7 @@ Conversation management service
 """
 import logging
 from typing import List, Dict, Any
-from src.main import db
+from src.extensions import db
 from src.models import Conversation, Message, Persona, PersonaState
 from src.services.tinytroupe_service import TinyTroupeService
 

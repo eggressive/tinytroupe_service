@@ -5,6 +5,7 @@ import os
 import json
 from typing import List, Dict, Any
 import logging
+from ..config import Config
 
 # This is a placeholder for the actual TinyTroupe import
 # In a real implementation, you would import the TinyTroupe library
@@ -16,10 +17,12 @@ class TinyTroupeService:
     def __init__(self):
         """Initialize the TinyTroupe service"""
         self.logger = logging.getLogger(__name__)
-        self.api_key = os.getenv('OPENAI_API_KEY') or os.getenv('AZURE_OPENAI_API_KEY')
+        self.api_key = Config.OPENAI_API_KEY or Config.AZURE_OPENAI_API_KEY
         
         if not self.api_key:
             self.logger.warning("No OpenAI or Azure OpenAI API key found. TinyTroupe will not function properly.")
+        else:
+            self.logger.info("API key successfully loaded from configuration.")
         
         # In a real implementation, you would initialize TinyTroupe here
         # self.world = TinyWorld(name="Financial Advisory Board")

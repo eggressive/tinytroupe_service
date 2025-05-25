@@ -4,7 +4,7 @@ Advisor routes for TinyTroupe Service
 from flask import Blueprint, jsonify, request
 from src.config import get_config
 from src.models import Persona
-from src.main import db
+from src.extensions import db
 
 advisor_bp = Blueprint('advisor', __name__)
 

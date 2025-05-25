@@ -2,10 +2,14 @@
 Configuration management for TinyTroupe Service
 """
 import os
+from pathlib import Path
 from dotenv import load_dotenv
 
+# Get the path to the .env file relative to this config file
+env_path = Path(__file__).parent.parent / '.env'
+
 # Load environment variables from .env file
-load_dotenv()
+load_dotenv(env_path)
 
 class Config:
     """Base configuration"""

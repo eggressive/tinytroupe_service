@@ -3,7 +3,7 @@ Database models for messages
 """
 from datetime import datetime
 import uuid
-from src.main import db
+from src.extensions import db
 
 class Message(db.Model):
     """Message model for storing conversation messages"""

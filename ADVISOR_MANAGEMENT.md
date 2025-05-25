@@ -26,17 +26,21 @@ The default advisors are defined in `src/config.py` in the `DEFAULT_ADVISORS` li
 
 ## Adding a New Advisor
 
-### Method 1: Using Python Script
+### Adding Using Python Script
 
-Create a Python script to add a new advisor:
+Create a Python script in the `tests/` directory to add a new advisor:
 
 ```python
-# add_advisor.py
+# tests/add_advisor.py
 import sys
 import os
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from pathlib import Path
 
-from src.main import app, db
+# Add the src directory to Python path
+sys.path.insert(0, str(Path(__file__).parent.parent / 'src'))
+
+from src.extensions import db
+from src.main import app
 from src.models import Persona
 
 # Define the new advisor
@@ -73,13 +77,15 @@ with app.app_context():
     print(f"Added new advisor: {new_advisor['name']}")
 ```
 
-Run the script:
+Run the script from the project root:
 
 ```bash
-python add_advisor.py
+cd /path/to/tinytroupe_service
+source venv/bin/activate  # Activate virtual environment
+python tests/add_advisor.py
 ```
 
-### Method 2: Modifying Configuration
+### Method 2: Modifying Configuration Files
 
 1. Open `src/config.py`
 2. Find the `DEFAULT_ADVISORS` list in the `Config` class
@@ -103,7 +109,7 @@ After modifying the configuration, you'll need to [update the database](#updatin
 
 ## Removing an Existing Advisor
 
-### Method 1: Using Python Script
+### Removing Using Python Script
 
 Create a Python script to remove an advisor:
 
@@ -113,7 +119,8 @@ import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from src.main import app, db
+from src.extensions import db
+from src.main import app
 from src.models import Persona
 
 # Advisor ID to remove
@@ -138,7 +145,7 @@ Run the script:
 python remove_advisor.py
 ```
 
-### Method 2: Modifying Configuration
+### Removing by Editing Configuration Files
 
 1. Open `src/config.py`
 2. Find the `DEFAULT_ADVISORS` list in the `Config` class
@@ -162,7 +169,7 @@ After modifying the configuration, you'll need to [update the database](#updatin
 
 ## Modifying an Existing Advisor
 
-### Method 1: Using Python Script
+### Modifying Using Python Script
 
 Create a Python script to modify an advisor:
 
@@ -172,7 +179,8 @@ import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from src.main import app, db
+from src.extensions import db
+from src.main import app
 from src.models import Persona
 
 # Advisor ID to modify
@@ -211,7 +219,7 @@ Run the script:
 python modify_advisor.py
 ```
 
-### Method 2: Modifying Configuration
+### Method 2: Updating Configuration Files
 
 1. Open `src/config.py`
 2. Find the `DEFAULT_ADVISORS` list in the `Config` class
@@ -249,7 +257,8 @@ import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from src.main import app, db
+from src.extensions import db
+from src.main import app
 from src.models import Persona
 from src.config import Config
 
@@ -329,7 +338,8 @@ import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from src.main import app, db
+from src.extensions import db
+from src.main import app
 from src.services.conversation_service import ConversationService
 
 with app.app_context():
@@ -374,6 +384,7 @@ For more advanced advisor management, consider implementing:
 Create a web-based admin interface for managing advisors without code changes:
 
 1. Add a new route in `src/main.py`:
+
    ```python
    @app.route('/admin/advisors')
    def admin_advisors():
@@ -389,6 +400,7 @@ Create a web-based admin interface for managing advisors without code changes:
 Create a library of pre-configured advisors that users can choose from:
 
 1. Create a JSON file with advisor templates:
+
    ```json
    {
      "financial_experts": [
@@ -419,6 +431,7 @@ Create a library of pre-configured advisors that users can choose from:
 Implement a system to load advisor configurations from external files:
 
 1. Create a directory for advisor configurations:
+
    ```bash
    mkdir -p advisors/enabled
    mkdir -p advisors/available

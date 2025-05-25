@@ -11,14 +11,15 @@ This guide will help you set up, run, and maintain the service on your local mac
 1. [System Requirements](#system-requirements)
 2. [Installation](#installation)
 3. [Configuration](#configuration)
-4. [Setting Up Financial API Keys](#setting-up-financial-api-keys)
-5. [Running the Service](#running-the-service)
-6. [Using the Web Interface](#using-the-web-interface)
-7. [Using the CLI](#using-the-cli)
-8. [Maintenance](#maintenance)
-9. [Troubleshooting](#troubleshooting)
-10. [Advanced Deployment](#advanced-deployment)
-11. [Security Considerations](#security-considerations)
+4. [Project Architecture](#project-architecture)
+5. [Setting Up Financial API Keys](#setting-up-financial-api-keys)
+6. [Running the Service](#running-the-service)
+7. [Using the Web Interface](#using-the-web-interface)
+8. [Using the CLI](#using-the-cli)
+9. [Maintenance](#maintenance)
+10. [Troubleshooting](#troubleshooting)
+11. [Advanced Deployment](#advanced-deployment)
+12. [Security Considerations](#security-considerations)
 
 ## System Requirements
 
@@ -59,7 +60,7 @@ pip install git+https://github.com/microsoft/TinyTroupe.git
 
 ## Configuration
 
-### Step 1: Create Environment Variables File
+### Configuration Step 1: Create Environment Variables File
 
 Create a `.env` file in the root directory with the following variables:
 
@@ -85,6 +86,76 @@ FLASK_DEBUG=False
 
 For SECRET_KEY, you can generate a random string or use a secure password manager.
 e.g. ```python -c "import secrets; print(secrets.token_hex(16))"```
+
+## Project Architecture
+
+TinyTroupe Financial Advisors follows a modular architecture to ensure maintainability and prevent circular dependencies:
+
+### Directory Structure
+
+```bash
+tinytroupe_service/
+├── backup/                # Backup directory
+├── cli/                   # Command-line interface
+│   └── commands/          # CLI command implementations
+├── instance/              # SQLite database location
+├── src/                   # Main application code
+│   ├── extensions.py      # Shared Flask extensions
+│   ├── main.py            # Application entry point
+│   ├── config.py          # Configuration management
+│   ├── models/            # Database models
+│   ├── routes/            # API endpoints
+│   ├── services/          # Business logic
+│   ├── static/            # Static assets
+│   │   ├── css/           # Stylesheets
+│   │   ├── images/        # Image assets
+│   │   └── js/            # JavaScript files
+│   └── templates/         # HTML templates
+└── tests/                 # Test files and scripts
+    ├── debug_env.py       # Environment debugging script
+    ├── final_test.py      # Final verification script
+    ├── test_service.py    # Service testing script
+    └── test_*.py          # Additional test files
+```
+
+### Key Components
+
+1. **Extensions Module**: Centralizes Flask extensions like SQLAlchemy and CORS to avoid circular imports:
+
+   ```python
+   # src/extensions.py
+   from flask_sqlalchemy import SQLAlchemy
+   from flask_cors import CORS
+
+   db = SQLAlchemy()  # Used in models and services
+   cors = CORS()      # Used for Cross-Origin Resource Sharing
+   ```
+
+2. **Main Application**: Initializes and configures the Flask app:
+
+   ```python
+   # src/main.py
+   from src.extensions import db, cors
+   
+   app = Flask(__name__)
+   # Configure app...
+   
+   # Initialize extensions with app
+   db.init_app(app)
+   cors.init_app(app)
+   ```
+
+3. **Models**: Database schemas using SQLAlchemy with proper imports:
+
+   ```python
+   # src/models/some_model.py
+   from src.extensions import db  # Import db from extensions, not main
+   
+   class SomeModel(db.Model):
+       # Model definition...
+   ```
+
+This architecture prevents common circular import issues in Flask applications and improves maintainability.
 
 ## Setting Up Financial API Keys
 
@@ -161,10 +232,10 @@ Alpha Vantage is another popular financial data provider:
    ALPHA_VANTAGE_API_KEY=your_alpha_vantage_api_key
    ```
 
-### Step 2: Initialize the Database
+### Configuration Step 2: Initialize the Database
 
 ```bash
-python -c "from src.main import app, db; app.app_context().push(); db.create_all()"
+python -c "from src.extensions import db; from src.main import app; app.app_context().push(); db.create_all()"
 ```
 
 ## Running the Service
@@ -274,6 +345,90 @@ To update the TinyTroupe library to the latest version:
 pip install --upgrade git+https://github.com/microsoft/TinyTroupe.git
 ```
 
+## Testing and Verification
+
+The project includes several test scripts in the `tests/` directory to help verify that everything is working correctly:
+
+### Complete System Verification
+
+To run a comprehensive test of all components:
+
+```bash
+cd /path/to/tinytroupe_service
+source venv/bin/activate  # Activate virtual environment
+python tests/verification.py
+```
+
+This script will test:
+- Environment variable loading from `.env` file
+- Config class initialization
+- TinyTroupe service API key access
+- Flask application availability (if running)
+
+### Environment Variable Testing
+
+To verify that environment variables are loading correctly:
+
+```bash
+cd /path/to/tinytroupe_service
+python tests/debug_env.py
+```
+
+This script will show:
+- Whether environment variables are loaded before and after `load_dotenv()`
+- The current working directory and file paths
+- Whether the Config class is reading variables correctly
+
+### TinyTroupe Service Testing
+
+To test that the TinyTroupe service can access the API key:
+
+```bash
+cd /path/to/tinytroupe_service
+source venv/bin/activate  # Activate virtual environment
+python tests/final_test.py
+```
+
+### Web Interface Testing
+
+You can run the web interface tests using pytest:
+
+```bash
+cd /path/to/tinytroupe_service
+source venv/bin/activate
+python -m pytest tests/test_web_interface.py -v
+```
+
+### CLI Interface Testing
+
+To test the CLI interface:
+
+```bash
+cd /path/to/tinytroupe_service
+source venv/bin/activate
+python -m pytest tests/test_cli_interface.py -v
+```
+
+### Quick API Verification
+
+To quickly verify that the API is working:
+
+```bash
+# Start the Flask application
+source venv/bin/activate
+python -m src.main &
+
+# Test creating a conversation
+curl -s http://localhost:5000/api/conversations -X POST \
+  -H "Content-Type: application/json" \
+  -d '{"title":"Test Conversation"}'
+
+# Test adding a message (replace CONVERSATION_ID with actual ID from above)
+curl -s http://localhost:5000/api/conversations/CONVERSATION_ID/messages -X POST \
+  -H "Content-Type: application/json" \
+  -d '{"content":"What are your thoughts on value investing?"}'
+```
+
 ## Troubleshooting
 
 ### Common Issues
@@ -290,6 +445,16 @@ If you see errors related to API keys:
    - You're using the correct RapidAPI host in your headers
    - You haven't exceeded your daily request limit
 
+**Common API Key Loading Issues:**
+
+- **Error**: "No OpenAI or Azure OpenAI API key found. TinyTroupe will not function properly."
+  - **Solution**: Ensure your `.env` file is in the project root directory (same level as `src/` folder)
+  - **Verification**: Test with: `python -c "from dotenv import load_dotenv; import os; load_dotenv(); print(os.getenv('OPENAI_API_KEY'))"`
+
+- **Error**: Environment variables not loading from `.env` file
+  - **Cause**: Invalid comment syntax in `.env` file
+  - **Solution**: Use `#` for comments in `.env` files, not `//` or other comment styles
+
 #### Database Issues
 
 If you encounter database errors:
@@ -305,6 +470,14 @@ If the CLI cannot connect to the server:
 1. Verify the server is running
 2. Check the server URL in the CLI configuration
 3. Ensure there are no firewall issues blocking the connection
+
+#### Import Errors
+
+If you encounter circular import errors:
+
+1. Check that you're importing `db` from `src.extensions` and not from `src.main`
+2. Ensure your project follows the architecture pattern described in [Project Architecture](#project-architecture)
+3. Move imports inside functions if you need to break circular dependencies in complex cases
 
 ## Advanced Deployment
 

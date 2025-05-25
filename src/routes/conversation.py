@@ -2,7 +2,7 @@
 Conversation routes for TinyTroupe Service
 """
 from flask import Blueprint, request, jsonify, current_app
-from src.main import db
+from src.extensions import db
 from src.models import Conversation, Message
 from src.services.conversation_service import ConversationService
 

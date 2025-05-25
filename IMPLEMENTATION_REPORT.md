@@ -11,9 +11,10 @@ This report summarizes the implementation of a TinyTroupe service with both web-
 The service follows a modular architecture with clear separation of concerns:
 
 1. **Database Layer**: SQLAlchemy models for conversations, messages, personas, and persona states
-2. **Service Layer**: Core business logic for TinyTroupe integration, conversation management, and financial data
-3. **API Layer**: RESTful endpoints for web and CLI access
-4. **Interface Layer**: Web UI and CLI for user interaction
+2. **Extensions Layer**: Shared Flask extensions (SQLAlchemy, CORS) in a dedicated `extensions.py` module to avoid circular imports
+3. **Service Layer**: Core business logic for TinyTroupe integration, conversation management, and financial data
+4. **API Layer**: RESTful endpoints for web and CLI access
+5. **Interface Layer**: Web UI and CLI for user interaction
 
 ### Key Features
 
@@ -21,6 +22,25 @@ The service follows a modular architecture with clear separation of concerns:
 - **Persistent Memory**: Conversations and advisor states are stored in a database
 - **Financial Data Integration**: Placeholder integration with financial APIs
 - **Extensible Design**: Modular architecture for future enhancements
+
+### Recent Fixes and Improvements
+
+During the development and testing phase, several critical issues were identified and resolved:
+
+1. **Environment Variable Loading Issue**: 
+   - **Problem**: The Flask application was not properly loading the OpenAI API key from the `.env` file due to timing issues with `load_dotenv()` execution
+   - **Solution**: Updated `config.py` to use explicit path resolution for the `.env` file using `Path(__file__).parent.parent / '.env'` and ensured proper loading order
+   - **Impact**: API key is now properly loaded and TinyTroupe service functions correctly without warnings
+
+2. **Markdown Documentation Linting**:
+   - **Problem**: MD024 (no-duplicate-heading) linting errors in documentation files caused by duplicate section headers
+   - **Solution**: Fixed duplicate headings in `ADVISOR_MANAGEMENT.md` and `USER_GUIDE.md` by making them unique (e.g., "Method 2:" became "Modifying Configuration Files", "Step 1/2:" became "Configuration Step 1/2:")
+   - **Impact**: Documentation now passes markdown linting standards and maintains better structure
+
+3. **TinyTroupe Service Integration**:
+   - **Problem**: Service was using direct `os.getenv()` calls instead of centralized configuration
+   - **Solution**: Updated `tinytroupe_service.py` to use `Config.OPENAI_API_KEY` and `Config.AZURE_OPENAI_API_KEY` for consistent configuration management
+   - **Impact**: Better configuration centralization and more reliable API key access
 
 ### Components Implemented
 
@@ -30,22 +50,27 @@ The service follows a modular architecture with clear separation of concerns:
    - Persona model for storing advisor personalities
    - PersonaState model for storing persona memory states
 
-2. **Service Components**:
+2. **Shared Extensions**:
+   - Centralized Flask extensions in an extensions module
+   - Utilized the Flask application factory pattern
+   - Eliminated circular imports for improved maintainability
+
+3. **Service Components**:
    - TinyTroupeService for integrating with Microsoft's TinyTroupe library
    - ConversationService for managing conversations and generating responses
    - FinancialService for retrieving and analyzing financial data
 
-3. **API Endpoints**:
+4. **API Endpoints**:
    - Conversation endpoints for creating and managing conversations
    - Advisor endpoints for accessing advisor information
    - Financial data endpoints for stock analysis
 
-4. **Web Interface**:
+5. **Web Interface**:
    - Home page for starting conversations and viewing advisors
    - Conversation page for interacting with advisors
    - Analysis page for stock analysis
 
-5. **CLI Interface**:
+6. **CLI Interface**:
    - Commands for listing and managing conversations
    - Commands for interacting with advisors
    - Commands for analyzing stocks
