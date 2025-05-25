@@ -16,6 +16,10 @@ class FinancialService:
         self.yahoo_finance_api_key = os.getenv('YAHOO_FINANCE_API_KEY')
         self.alpha_vantage_api_key = os.getenv('ALPHA_VANTAGE_API_KEY')
         
+        self.yahoo_finance_headers = {
+        'X-RapidAPI-Key': self.yahoo_finance_api_key,
+        'X-RapidAPI-Host': 'yahoo-finance-real-time1.p.rapidapi.com'  # This may vary based on your provider
+        }
         # Initialize TinyTroupe service for stock analysis
         from src.services.tinytroupe_service import TinyTroupeService
         self.tinytroupe_service = TinyTroupeService()

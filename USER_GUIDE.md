@@ -11,13 +11,14 @@ This guide will help you set up, run, and maintain the service on your local mac
 1. [System Requirements](#system-requirements)
 2. [Installation](#installation)
 3. [Configuration](#configuration)
-4. [Running the Service](#running-the-service)
-5. [Using the Web Interface](#using-the-web-interface)
-6. [Using the CLI](#using-the-cli)
-7. [Maintenance](#maintenance)
-8. [Troubleshooting](#troubleshooting)
-9. [Advanced Deployment](#advanced-deployment)
-10. [Security Considerations](#security-considerations)
+4. [Setting Up Financial API Keys](#setting-up-financial-api-keys)
+5. [Running the Service](#running-the-service)
+6. [Using the Web Interface](#using-the-web-interface)
+7. [Using the CLI](#using-the-cli)
+8. [Maintenance](#maintenance)
+9. [Troubleshooting](#troubleshooting)
+10. [Advanced Deployment](#advanced-deployment)
+11. [Security Considerations](#security-considerations)
 
 ## System Requirements
 
@@ -62,7 +63,7 @@ pip install git+https://github.com/microsoft/TinyTroupe.git
 
 Create a `.env` file in the root directory with the following variables:
 
-```
+```bash
 # API Keys
 OPENAI_API_KEY=your_openai_api_key
 # OR for Azure OpenAI
@@ -81,6 +82,84 @@ ALPHA_VANTAGE_API_KEY=your_alpha_vantage_api_key
 SECRET_KEY=your_secret_key
 FLASK_DEBUG=False
 ```
+
+For SECRET_KEY, you can generate a random string or use a secure password manager.
+e.g. ```python -c "import secrets; print(secrets.token_hex(16))"```
+
+## Setting Up Financial API Keys
+
+### Yahoo Finance API Key Setup
+
+Yahoo Finance doesn't offer a direct API service. Instead, you'll need to use RapidAPI to access Yahoo Finance data:
+
+1. **Sign up for RapidAPI**:
+   - Go to [https://rapidapi.com/](https://rapidapi.com/)
+   - Click "Sign Up" and create an account
+
+2. **Subscribe to Yahoo Finance API**:
+   - Search for "Yahoo Finance" in the RapidAPI marketplace
+   - Select one of the Yahoo Finance API providers (popular ones include Yahoo Finance by API Dojo or Yahoo Finance by apibridge)
+   - Review the pricing plans (they typically offer a free tier with limited requests)
+   - Click "Subscribe to Test" for your chosen plan
+
+3. **Get your API Key**:
+   - After subscribing, you'll be provided with an API key (also called "X-RapidAPI-Key")
+   - This key will be visible in the "Header Parameters" section of any endpoint documentation
+   - Copy this key for use in your TinyTroupe service
+
+4. **Add the API Key to your environment**:
+   - Add the API key to your `.env` file:
+
+     ```bash
+     YAHOO_FINANCE_API_KEY=your_rapidapi_key_here
+     ```
+
+5. **Update the FinancialService class** (if needed):
+   - Open `src/services/financial_service.py`
+   - Update the `__init__` method to include RapidAPI headers:
+
+     ```python
+     def __init__(self):
+         """Initialize the financial service"""
+         self.logger = logging.getLogger(__name__)
+         self.yahoo_finance_api_key = os.getenv('YAHOO_FINANCE_API_KEY')
+         self.alpha_vantage_api_key = os.getenv('ALPHA_VANTAGE_API_KEY')
+         
+         # Add RapidAPI headers for Yahoo Finance
+         self.yahoo_finance_headers = {
+             'X-RapidAPI-Key': self.yahoo_finance_api_key,
+             'X-RapidAPI-Host': 'yahoo-finance15.p.rapidapi.com'  # This may vary based on your provider
+         }
+     ```
+
+   - Update API request methods to use these headers:
+
+     ```python
+     def get_stock_data(self, symbol):
+         """Get stock data from Yahoo Finance"""
+         try:
+             url = f"https://yahoo-finance15.p.rapidapi.com/api/yahoo/qu/quote/{symbol}"
+             response = requests.get(url, headers=self.yahoo_finance_headers)
+             response.raise_for_status()
+             # Process response...
+         except Exception as e:
+             self.logger.error(f"Error fetching stock data: {str(e)}")
+             # Handle error...
+     ```
+
+Note: RapidAPI's free tiers typically have daily request limits. For a production environment, you might want to consider a paid plan based on your usage requirements.
+
+### Alpha Vantage API Key Setup (Alternative)
+
+Alpha Vantage is another popular financial data provider:
+
+1. Go to [https://www.alphavantage.co/](https://www.alphavantage.co/)
+2. Sign up for a free API key
+3. Add the key to your `.env` file:
+
+   ```bash
+   ALPHA_VANTAGE_API_KEY=your_alpha_vantage_api_key
+   ```
 
 ### Step 2: Initialize the Database
 
@@ -119,6 +198,7 @@ The web interface provides an intuitive way to interact with your financial advi
 ### Home Page
 
 The home page allows you to:
+
 - Start new conversations
 - Access recent conversations
 - View your advisory team
@@ -126,6 +206,7 @@ The home page allows you to:
 ### Conversation Page
 
 In a conversation, you can:
+
 - Send messages to your advisors
 - View responses from each advisor
 - See the conversation history
@@ -133,6 +214,7 @@ In a conversation, you can:
 ### Stock Analysis Page
 
 The stock analysis page allows you to:
+
 - Analyze specific stocks by symbol
 - View financial data and metrics
 - Get personalized analysis from each advisor
@@ -143,7 +225,7 @@ The CLI provides command-line access to the same functionality as the web interf
 
 ### Available Commands
 
-```
+```bash
 tinytroupe --help                        # Show help
 tinytroupe list                          # List all conversations
 tinytroupe start --title "My Analysis"   # Start a new conversation
@@ -155,11 +237,13 @@ tinytroupe config --server http://localhost:5000 --user default_user  # Configur
 ### Examples
 
 Starting a new conversation:
+
 ```bash
 tinytroupe start --title "Portfolio Review"
 ```
 
 Analyzing a stock:
+
 ```bash
 tinytroupe analyze AAPL
 ```
@@ -197,13 +281,19 @@ pip install --upgrade git+https://github.com/microsoft/TinyTroupe.git
 #### API Key Issues
 
 If you see errors related to API keys:
+
 1. Verify that your `.env` file contains the correct API keys
 2. Ensure the environment variables are being loaded properly
 3. Check that you have sufficient credits/quota on your OpenAI account
+4. For Yahoo Finance API via RapidAPI, verify that:
+   - Your subscription is active
+   - You're using the correct RapidAPI host in your headers
+   - You haven't exceeded your daily request limit
 
 #### Database Issues
 
 If you encounter database errors:
+
 1. Ensure the database file exists and is writable
 2. Try reinitializing the database using the command in the Configuration section
 3. Check for disk space issues
@@ -211,6 +301,7 @@ If you encounter database errors:
 #### Connection Issues
 
 If the CLI cannot connect to the server:
+
 1. Verify the server is running
 2. Check the server URL in the CLI configuration
 3. Ensure there are no firewall issues blocking the connection
@@ -249,7 +340,7 @@ To deploy on an AWS EC2 instance:
 
 Example systemd service file (`/etc/systemd/system/tinytroupe.service`):
 
-```
+```ini
 [Unit]
 Description=TinyTroupe Financial Advisors
 After=docker.service
@@ -273,6 +364,7 @@ WantedBy=multi-user.target
 The initial implementation is for personal use without authentication. To add basic authentication:
 
 1. Install Flask-Login:
+
    ```bash
    pip install flask-login
    ```
@@ -283,6 +375,7 @@ The initial implementation is for personal use without authentication. To add ba
 ### API Key Management
 
 Always keep your API keys secure:
+
 - Never commit `.env` files to version control
 - Use environment variables for production deployments
 - Consider using a secrets manager for cloud deployments
@@ -290,6 +383,7 @@ Always keep your API keys secure:
 ### HTTPS
 
 For production deployments, always use HTTPS:
+
 - Set up a reverse proxy like Nginx with Let's Encrypt
 - Configure proper SSL/TLS settings
 - Redirect all HTTP traffic to HTTPS
