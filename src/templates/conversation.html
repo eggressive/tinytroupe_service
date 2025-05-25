@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conversation - TinyTroupe Financial Advisors</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">TinyTroupe Financial Advisors</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/analysis">Stock Analysis</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h2 id="conversation-title">Loading conversation...</h2>
+                        <a href="/" class="btn btn-outline-secondary btn-sm">Back to Home</a>
+                    </div>
+                    <div class="card-body">
+                        <div id="conversation-messages" class="mb-4">
+                            <p class="text-center text-muted">Loading messages...</p>
+                        </div>
+                        
+                        <div class="card">
+                            <div class="card-body">
+                                <form id="message-form">
+                                    <div class="mb-3">
+                                        <label for="message-input" class="form-label">Your Message</label>
+                                        <textarea class="form-control" id="message-input" rows="3" placeholder="Ask your financial advisors a question..."></textarea>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">Send Message</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer mt-5 py-3 bg-light">
+        <div class="container text-center">
+            <span class="text-muted">TinyTroupe Financial Advisors &copy; 2025</span>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/js/main.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const conversationId = window.location.pathname.split('/').pop();
+            
+            // Load conversation details
+            fetch(`/api/conversations/${conversationId}`)
+                .then(response => response.json())
+                .then(conversation => {
+                    document.getElementById('conversation-title').textContent = conversation.title;
+                    document.title = `${conversation.title} - TinyTroupe Financial Advisors`;
+                })
+                .catch(error => {
+                    console.error('Error loading conversation:', error);
+                    document.getElementById('conversation-title').textContent = 'Error loading conversation';
+                });
+            
+            // Load conversation messages
+            loadMessages();
+            
+            // Handle message form
+            document.getElementById('message-form').addEventListener('submit', function(event) {
+                event.preventDefault();
+                const messageInput = document.getElementById('message-input');
+                const content = messageInput.value.trim();
+                
+                if (!content) {
+                    return;
+                }
+                
+                // Disable form while sending
+                const submitButton = this.querySelector('button[type="submit"]');
+                submitButton.disabled = true;
+                submitButton.textContent = 'Sending...';
+                
+                fetch(`/api/conversations/${conversationId}/messages`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        content: content
+                    }),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // Clear input
+                    messageInput.value = '';
+                    
+                    // Reload messages
+                    loadMessages();
+                    
+                    // Re-enable form
+                    submitButton.disabled = false;
+                    submitButton.textContent = 'Send Message';
+                })
+                .catch(error => {
+                    console.error('Error sending message:', error);
+                    alert('Error sending message. Please try again.');
+                    
+                    // Re-enable form
+                    submitButton.disabled = false;
+                    submitButton.textContent = 'Send Message';
+                });
+            });
+            
+            function loadMessages() {
+                fetch(`/api/conversations/${conversationId}/messages`)
+                    .then(response => response.json())
+                    .then(messages => {
+                        const messagesContainer = document.getElementById('conversation-messages');
+                        
+                        if (messages.length === 0) {
+                            messagesContainer.innerHTML = `
+                                <div class="alert alert-info">
+                                    No messages yet. Start the conversation by sending a message below.
+                                </div>
+                            `;
+                            return;
+                        }
+                        
+                        let html = '';
+                        messages.forEach(message => {
+                            if (message.role === 'user') {
+                                html += `
+                                    <div class="card mb-3 border-primary">
+                                        <div class="card-header bg-primary text-white">
+                                            You
+                                        </div>
+                                        <div class="card-body">
+                                            <p class="card-text">${message.content}</p>
+                                            <p class="card-text"><small class="text-muted">${new Date(message.timestamp).toLocaleString()}</small></p>
+                                        </div>
+                                    </div>
+                                `;
+                            } else {
+                                html += `
+                                    <div class="card mb-3 border-success">
+                                        <div class="card-header bg-success text-white">
+                                            Advisor: ${message.advisor_id || 'Unknown'}
+                                        </div>
+                                        <div class="card-body">
+                                            <p class="card-text">${message.content}</p>
+                                            <p class="card-text"><small class="text-muted">${new Date(message.timestamp).toLocaleString()}</small></p>
+                                        </div>
+                                    </div>
+                                `;
+                            }
+                        });
+                        
+                        messagesContainer.innerHTML = html;
+                        
+                        // Scroll to bottom
+                        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                    })
+                    .catch(error => {
+                        console.error('Error loading messages:', error);
+                        document.getElementById('conversation-messages').innerHTML = 
+                            '<p class="text-center text-danger">Error loading messages</p>';
+                    });
+            }
+        });
+    </script>
+</body>
+</html>

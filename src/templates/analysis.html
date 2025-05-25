@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Analysis - TinyTroupe Financial Advisors</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">TinyTroupe Financial Advisors</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/analysis">Stock Analysis</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h2>Stock Analysis</h2>
+                    </div>
+                    <div class="card-body">
+                        <p class="lead">
+                            Get expert analysis on any stock from your team of financial advisors.
+                        </p>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="card mb-4">
+                                    <div class="card-header">
+                                        <h4>Analyze a Stock</h4>
+                                    </div>
+                                    <div class="card-body">
+                                        <form id="analysis-form">
+                                            <div class="mb-3">
+                                                <label for="stock-symbol" class="form-label">Stock Symbol</label>
+                                                <input type="text" class="form-control" id="stock-symbol" placeholder="e.g., AAPL, MSFT, GOOGL">
+                                                <div class="form-text">Enter the ticker symbol of the stock you want to analyze.</div>
+                                            </div>
+                                            <button type="submit" class="btn btn-primary">Analyze</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h4>Recent Analyses</h4>
+                                    </div>
+                                    <div class="card-body">
+                                        <p class="text-muted">Your recent stock analyses will appear here.</p>
+                                        <ul class="list-group" id="recent-analyses">
+                                            <!-- Placeholder for recent analyses -->
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mt-4" id="analysis-results" style="display: none;">
+                            <div class="col-md-12">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h4>Analysis Results: <span id="result-symbol"></span></h4>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row mb-4">
+                                            <div class="col-md-12">
+                                                <h5>Stock Data</h5>
+                                                <div id="stock-data" class="table-responsive">
+                                                    <!-- Stock data will be inserted here -->
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="row">
+                                            <div class="col-md-12">
+                                                <h5>Advisor Analysis</h5>
+                                                <div id="advisor-analysis">
+                                                    <!-- Advisor analysis will be inserted here -->
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer mt-5 py-3 bg-light">
+        <div class="container text-center">
+            <span class="text-muted">TinyTroupe Financial Advisors &copy; 2025</span>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/js/main.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Handle analysis form
+            document.getElementById('analysis-form').addEventListener('submit', function(event) {
+                event.preventDefault();
+                const symbol = document.getElementById('stock-symbol').value.trim().toUpperCase();
+                
+                if (!symbol) {
+                    alert('Please enter a stock symbol');
+                    return;
+                }
+                
+                // Show loading state
+                const submitButton = this.querySelector('button[type="submit"]');
+                submitButton.disabled = true;
+                submitButton.textContent = 'Analyzing...';
+                
+                // Get analysis
+                fetch(`/api/financial-data/${symbol}/analysis`)
+                    .then(response => response.json())
+                    .then(data => {
+                        // Display results
+                        displayAnalysisResults(symbol, data);
+                        
+                        // Add to recent analyses
+                        addToRecentAnalyses(symbol);
+                        
+                        // Reset form
+                        submitButton.disabled = false;
+                        submitButton.textContent = 'Analyze';
+                    })
+                    .catch(error => {
+                        console.error('Error analyzing stock:', error);
+                        alert('Error analyzing stock. Please try again.');
+                        
+                        // Reset form
+                        submitButton.disabled = false;
+                        submitButton.textContent = 'Analyze';
+                    });
+            });
+            
+            function displayAnalysisResults(symbol, data) {
+                // Show results section
+                document.getElementById('analysis-results').style.display = 'block';
+                document.getElementById('result-symbol').textContent = symbol;
+                
+                // Display stock data
+                const stockData = data.stock_data;
+                let stockDataHtml = `
+                    <table class="table table-striped">
+                        <tbody>
+                            <tr>
+                                <th>Price</th>
+                                <td>$${stockData.price.toFixed(2)}</td>
+                                <th>Change</th>
+                                <td>${stockData.change > 0 ? '+' : ''}${stockData.change.toFixed(2)} (${stockData.change_percent.toFixed(2)}%)</td>
+                            </tr>
+                            <tr>
+                                <th>Market Cap</th>
+                                <td>${stockData.market_cap}</td>
+                                <th>P/E Ratio</th>
+                                <td>${stockData.pe_ratio.toFixed(2)}</td>
+                            </tr>
+                            <tr>
+                                <th>Dividend Yield</th>
+                                <td>${stockData.dividend_yield.toFixed(2)}%</td>
+                                <th>52-Week Range</th>
+                                <td>$${stockData['52_week_low'].toFixed(2)} - $${stockData['52_week_high'].toFixed(2)}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <p class="text-muted small">Source: ${stockData.data_source}</p>
+                `;
+                document.getElementById('stock-data').innerHTML = stockDataHtml;
+                
+                // Display advisor analysis
+                const advisorAnalysis = data.advisor_analysis;
+                let analysisHtml = '<div class="accordion" id="advisorAccordion">';
+                
+                let index = 0;
+                for (const [advisorId, analysis] of Object.entries(advisorAnalysis)) {
+                    analysisHtml += `
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="heading${index}">
+                                <button class="accordion-button ${index > 0 ? 'collapsed' : ''}" type="button" data-bs-toggle="collapse" data-bs-target="#collapse${index}" aria-expanded="${index === 0}" aria-controls="collapse${index}">
+                                    ${analysis.name}
+                                </button>
+                            </h2>
+                            <div id="collapse${index}" class="accordion-collapse collapse ${index === 0 ? 'show' : ''}" aria-labelledby="heading${index}" data-bs-parent="#advisorAccordion">
+                                <div class="accordion-body">
+                                    <p><strong>Summary:</strong> ${analysis.summary}</p>
+                                    <p><strong>Recommendation:</strong> ${analysis.recommendation}</p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    index++;
+                }
+                
+                analysisHtml += '</div>';
+                document.getElementById('advisor-analysis').innerHTML = analysisHtml;
+                
+                // Scroll to results
+                document.getElementById('analysis-results').scrollIntoView({ behavior: 'smooth' });
+            }
+            
+            function addToRecentAnalyses(symbol) {
+                const recentAnalyses = document.getElementById('recent-analyses');
+                
+                // Check if already in list
+                const existingItem = Array.from(recentAnalyses.children).find(item => 
+                    item.textContent.trim() === symbol
+                );
+                
+                if (existingItem) {
+                    // Move to top if already exists
+                    recentAnalyses.removeChild(existingItem);
+                    recentAnalyses.prepend(existingItem);
+                } else {
+                    // Add new item
+                    const item = document.createElement('li');
+                    item.className = 'list-group-item';
+                    item.textContent = symbol;
+                    item.style.cursor = 'pointer';
+                    
+                    item.addEventListener('click', function() {
+                        document.getElementById('stock-symbol').value = symbol;
+                        document.getElementById('analysis-form').dispatchEvent(new Event('submit'));
+                    });
+                    
+                    // Add to top of list
+                    recentAnalyses.prepend(item);
+                    
+                    // Limit to 5 items
+                    if (recentAnalyses.children.length > 5) {
+                        recentAnalyses.removeChild(recentAnalyses.lastChild);
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
