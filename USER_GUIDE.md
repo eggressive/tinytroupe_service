@@ -360,6 +360,7 @@ python tests/verification.py
 ```
 
 This script will test:
+
 - Environment variable loading from `.env` file
 - Config class initialization
 - TinyTroupe service API key access
@@ -375,6 +376,7 @@ python tests/debug_env.py
 ```
 
 This script will show:
+
 - Whether environment variables are loaded before and after `load_dotenv()`
 - The current working directory and file paths
 - Whether the Config class is reading variables correctly
